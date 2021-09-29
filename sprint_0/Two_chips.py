@@ -2,8 +2,12 @@ from typing import List, Tuple, Optional
 
 
 def two_sum(arr: List[int], target_sum: int) -> Optional[Tuple[int, int]]:
-    # Здесь реализация вашего решения
-    pass
+    arr_length = len(arr)
+    for i in range(arr_length):
+        for j in range(i + 1, arr_length):
+            if arr[i] + arr[j] == target_sum:
+                return arr[i], arr[j]
+    return
 
 
 def read_input() -> Tuple[List[int], int]:
