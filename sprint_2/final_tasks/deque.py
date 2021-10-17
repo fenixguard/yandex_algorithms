@@ -1,5 +1,5 @@
 """
-Привет! ID успешной посылки: 54781671
+Привет! ID успешной посылки: 54853357
 _____________________________________
 Задача:
 Гоша реализовал структуру данных Дек, максимальный размер которого определяется заданным числом. Методы push_back(x),
@@ -9,94 +9,125 @@ push_front(x), pop_back(), pop_front() работали корректно. Но
 Внимание: при реализации нельзя использовать связный список.
 ____________________________________________________________
 Так как связный список использовать нельзя, я подумал и пришел к тому, что самое оптимальное решение это использовать
-два массива. Левый и правый, первый использовать для метода push_back, а второй - push_front.
+два массива, НО потом мне подсказали и я подумал еще получше - циклический буфер будет лучшим выбором!
+Будем использовать для метода push_back и push_front для вставки значений в конец и начало буфера.
 Также мы заведем в классе Deque поле size, в котором будем хранить максимальный размер Дека, задаваемый во входных
-данных.
+данных. Поля tail и head для хранения индексов хвоста буфера и начала. Поле count - хранение количества элементов в
+буфере. Ну и соответственно проинициализируем саму очередь на заданный размер.
 Идея алгоритма простая, мы считываем данные, упаковываем их в массив, далее через оператов if - elif на нужные команды
 вызываем нужные методы.
+
 Для реализации алгоритма нам нужен класс, в котором будет реализованы следующие методы:
- * push_back(value) - Добавляет элемент в левый массив
- * push_front(value) - добавляем элемент в правый массив
- * pop_back() - удаляет элемент из левого массива
- * pop_front() - удаляет элемент из правого массива
-Логично подумать, что если у нас постоянно добавляются элементы в правый массив, а потом идет удаление из левого, то это
-не значит, что в левом массиве нет значений, они есть и эти значения это реверс правого массива. Для реализации этой
-механики нам потребуются два вспомогательных метода в классе, обозначим их приватными, чтобы они не 'торчали' наружу.
- * __fill_front()
- * __fill_back()
-Эти два метода позволят нам удалять элементы из левого и правого массива, соответственно, элементы, если эти массивы
-пустые и добавление было постоянно только в один.
+ * push_back(value) - добавляет элемент в конец буфера
+ * push_front(value) - добавляем элемент в начало буфера
+ * pop_back() - удаляет элемент из конца буфера
+ * pop_front() - удаляет элемент из начала буфера
+Два дополнительный метода is_full() и is_empty() позволят нам отлавливать моменты, когда дека заполнена или пуста, и
+выкидывать в методах добавления и удаления элементом исключения, которые мы будем обрабатывать снаружи.
+При добавление в конец проверяем, что буфер не заполнен, далее проверяем, что элементы в буфере уже есть, проверяем
+если tail + 1 == size, то обнуляем tail, в противном случае увеличиваем tail на 1, для того, чтобы не перезатереть
+значение, которое уже лежит в буфере. Если буфер пустой, то tail и  head обнуляем и записываем по индексу tail значение
+value. Увеличиваем счетчик элементов буфере на 1.
+Аналогичная ситуация для добавления в начало. Только здесь необходимо следить за индексом в head для того, чтобы не
+перезатереть значение, которое уже записано в буфер. Добавление происходит по индексу head, и увеличение счетчика на 1.
+Далее методы удаления элементов.
+Удаление с конца. Проверяем буфер на пустоту. Сохраняем текущий индекс в idx из tail во временную переменную именно по
+этому индексу мы и извлечем значение. Далее нам нужно переопределить индексы в tail и head, чтобы они указывали на
+правильные позиции буфера после удаления элемента. Уменьшаем счетчик на 1. Берем элемент по индексу idx из буфера, а на
+его место записываем None. Удалять элементы нельзя, чтобы не изменился размер буфера. По идее элементы можно не заменять
+на None, а просто сдвигать tail и head на нужные новые позиции и уменьшать счетчик. Но в задании указано удалить и мы
+его удаляем.
+Удаление с начала аналогичное. В idx сохраняем индекс из head, далее переопределяем tail и head для новых позиций,
+уменьшаем счетчик на 1 и возвращаем элемент.
 ------------------------------------------------------------
 Про сложность.
 Алгоритм выполняется за линейное время O(n), где n - количество команд.
 Сами операции выполняются за O(1).
-Мы тратим на работу алгоритма O(n) памяти, потому что длина левого и правого массива не превосходят 0 <= n <= 50_000,
-где n это маскимальная длина Дека.
-Что касаемо ввода, то памяти O(n), где n - не более 100_000 строк.
+Мы тратим на работу алгоритма O(n) памяти, потому что длина буфера не превосходят 0 <= n <= 50_000,
+где n это маскимальный размер Дека.
 ------------------------------------------------------------
 Данные посылки:
-0.527s 19.80Mb
+0.56s 19.71Mb
 
 """
-
 
 from typing import List, Tuple, NoReturn
 
 
 class Deque:
 
-    def __init__(self, size: int):
-        self.left = []
-        self.right = []
-        self.size = size
+    def __init__(self, n: int):
+        self.queue = [None] * n
+        self.head = 0
+        self.tail = 0
+        self.size = n
+        self.count = 0
 
-    def push_back(self, value: int):
-        if self.size <= (len(self.left) + len(self.right)):
-            print('error')
+    def is_full(self):
+        return self.count == self.size
+
+    def is_empty(self):
+        return self.count == 0
+
+    def push_back(self, value):
+        if self.is_full():
+            raise IndexError()
+        if self.count:
+            if self.tail + 1 == self.size:
+                self.tail = 0
+            else:
+                self.tail += 1
         else:
-            self.left.append(value)
+            self.tail = self.head = 0
+
+        self.queue[self.tail] = value
+        self.count += 1
 
     def push_front(self, value: int):
-        if self.size <= (len(self.left) + len(self.right)):
-            print('error')
+        if self.is_full():
+            raise IndexError()
+        if self.count:
+            if self.head - 1 < 0:
+                self.head = self.size - 1
+            else:
+                self.head -= 1
         else:
-            self.right.append(value)
+            self.tail = self.head = 0
+
+        self.queue[self.head] = value
+        self.count += 1
 
     def pop_back(self):
-        if not self.left:
-            self.__fill_back()
-            if len(self.left) == 0:
-                return 'error'
-        return self.left.pop()
+        if self.is_empty():
+            raise IndexError()
+        idx = self.tail
+        if self.count == 1:
+            self.tail = self.head = -1
+        else:
+            if self.tail - 1 < 0:
+                self.tail = self.size - 1
+            else:
+                self.tail -= 1
+        self.count -= 1
+        item = self.queue[idx]
+        self.queue[idx] = None
+        return item
 
     def pop_front(self):
-        if not self.right:
-            self.__fill_front()
-            if len(self.right) == 0:
-                return 'error'
-        return self.right.pop()
-
-    def __fill_front(self):
-        x = len(self.left) // 2
-        if x:
-            self.right.extend(self.left[0:x])
-            self.right.reverse()
-            del self.left[0:x]
+        if self.is_empty():
+            raise IndexError()
+        idx = self.head
+        if self.count == 1:
+            self.tail = self.head = -1
         else:
-            self.right.extend(self.left)
-            if len(self.left):
-                del self.left[0]
-
-    def __fill_back(self):
-        x = len(self.right) // 2
-        if x:
-            self.left.extend(self.right[0:x])
-            self.left.reverse()
-            del self.right[0:x]
-        else:
-            self.left.extend(self.right)
-            if len(self.right):
-                del self.right[0]
+            if self.head + 1 == self.size:
+                self.head = 0
+            else:
+                self.head += 1
+        self.count -= 1
+        item = self.queue[idx]
+        self.queue[idx] = None
+        return item
 
 
 def input_data() -> Tuple[int, List[Tuple[str, ...]]]:
@@ -111,16 +142,28 @@ def input_data() -> Tuple[int, List[Tuple[str, ...]]]:
 
 
 def solution(deque_length: int, command_list: List[Tuple[str, ...]]) -> NoReturn:
-    deque = Deque(size=deque_length)
+    deque = Deque(deque_length)
     for command in command_list:
         if command[0] == 'push_back':
-            deque.push_back(int(command[1]))
+            try:
+                deque.push_back(int(command[1]))
+            except IndexError:
+                print('error')
         elif command[0] == 'push_front':
-            deque.push_front(int(command[1]))
+            try:
+                deque.push_front(int(command[1]))
+            except IndexError:
+                print('error')
         elif command[0] == 'pop_back':
-            print(deque.pop_back())
+            try:
+                print(deque.pop_back())
+            except IndexError:
+                print('error')
         elif command[0] == 'pop_front':
-            print(deque.pop_front())
+            try:
+                print(deque.pop_front())
+            except IndexError:
+                print('error')
 
 
 if __name__ == '__main__':
