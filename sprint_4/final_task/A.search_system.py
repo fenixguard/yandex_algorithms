@@ -1,5 +1,5 @@
 """
-ID удачной посылки: 56270557
+ID удачной посылки: 57490557
 ------------------------------------------------------------------------------------------------------------------------
 Задание
 ------------------------------------------------------------------------------------------------------------------------
@@ -29,26 +29,31 @@ ID удачной посылки: 56270557
 Сложность
 ------------------------------------------------------------------------------------------------------------------------
 Временная - O(n^2)
-Пространственная - O(n), где n - количество всех уникальных слов во всех документах (на создание поискового индекса)
-Дополнительно - O(m), где m - количество документов подходящих под запрос.
+Разобьем подсчет сложности на два этапа.
+1. Поисковый индекс:
+Пространственная - O(n), где n - количество всех слов во всех документах.
+2. Поиск релевантных документов:
+Пространственная - O(n), где n - количество документов подходящих под запрос на каждом этапе, хоть далее мы и берем
+всего 5 самых релевантных, все равно сначала мы аккумулируем все, а уже оттуда возьмем срезом первые 5 после сортировки.
+Дополнительно - O(m), где m - количество уникальных слов в запросе, мы делаем из листа сет.
 ------------------------------------------------------------------------------------------------------------------------
 Данные посылки
 ------------------------------------------------------------------------------------------------------------------------
-4.774s 64.30Mb
+4.684s 55.32Mb
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-from typing import Tuple, List, Set, Dict
-from collections import Counter
+from typing import Tuple, List, Dict
+from collections import Counter, defaultdict
 
 
-def solution(documents: List[List[str]], queries: List[Set[str]]):
+def solution(documents: List[List[str]], queries: List[List[str]]):
     search_index = create_search_index(documents)
 
-    for i, query in enumerate(queries):
+    for query in queries:
         counter_docs = dict()
-        for q in query:
-            docs = search_index.get(q)
+        for word in set(query):
+            docs = search_index.get(word)
             if docs:
                 if len(counter_docs):
                     counter_docs = Counter(counter_docs) + Counter(docs)
@@ -58,21 +63,14 @@ def solution(documents: List[List[str]], queries: List[Set[str]]):
 
 
 def create_search_index(docs: List[List[str]]) -> Dict[str, Dict[int, int]]:
-    search_index = dict()
-    for i, document in enumerate(docs):
-        for doc in document:
-            key_doc = search_index.get(doc)
-            if key_doc:
-                if key_doc.get(i + 1):
-                    key_doc[i + 1] += 1
-                else:
-                    key_doc[i + 1] = 1
-            else:
-                search_index[doc] = {i + 1: 1}
+    search_index = defaultdict(dict)
+    for doc_id, document in enumerate(docs, start=1):
+        for word in document:
+            search_index[word][doc_id] = search_index[word].get(doc_id, 0) + 1
     return search_index
 
 
-def input_data() -> Tuple[List[List[str]], List[Set[str]]]:
+def input_data() -> Tuple[List[List[str]], List[List[str]]]:
     n = int(input())
     docs = list()
     while n:
@@ -81,7 +79,7 @@ def input_data() -> Tuple[List[List[str]], List[Set[str]]]:
     m = int(input())
     reqs = list()
     while m:
-        reqs.append(set(input().strip().split()))
+        reqs.append(input().strip().split())
         m -= 1
 
     return docs, reqs
