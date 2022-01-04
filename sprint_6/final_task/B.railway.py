@@ -1,5 +1,5 @@
 """
-ID успешной посылки: 63250362
+ID успешной посылки: 63328953
 -------------------------------------------------------------------------------
 Задача:
 Определить является ли сеть железных дорог оптимальной. Под оптимальностью
@@ -31,12 +31,16 @@ P.S.: на текущий момент, могу сказать, что данн
 вершин при обходе DFS - O(V).
 -------------------------------------------------------------------------------
 Данные посылки:
-1.009s 48.26Mb
+9.321s 322.94Mb
 -------------------------------------------------------------------------------
 """
 
 from typing import List, Tuple, NoReturn
 from collections import defaultdict
+
+WHITE = 0
+GRAY = 1
+BLACK = 2
 
 
 class NotOptimised(Exception):
@@ -47,7 +51,7 @@ class Graph:
     def __init__(self, n: int):
         self.size = n
         self.edges = defaultdict(list)
-        self.color = ['white'] * (self.size + 1)
+        self.color = [WHITE] * (self.size + 1)
 
     def add_edge(self, v: int, u: int) -> NoReturn:
         self.edges[v].append(u)
@@ -57,16 +61,16 @@ class Graph:
         stack.append(start_vertex)
         while len(stack) > 0:
             v = stack.pop()
-            if self.color[v] == 'white':
-                self.color[v] = 'gray'
+            if self.color[v] == WHITE:
+                self.color[v] = GRAY
                 stack.append(v)
                 for u in self.edges[v]:
-                    if self.color[u] == 'white':
+                    if self.color[u] == WHITE:
                         stack.append(u)
-                    if self.color[u] == 'gray':
+                    if self.color[u] == GRAY:
                         raise NotOptimised()
-            elif self.color[v] == 'gray':
-                self.color[v] = 'black'
+            elif self.color[v] == GRAY:
+                self.color[v] = BLACK
 
 
 def solution(n: int, rails: List[Tuple[str]]) -> NoReturn:
@@ -79,11 +83,11 @@ def solution(n: int, rails: List[Tuple[str]]) -> NoReturn:
                 graph.add_edge(i + j, i)
     try:
         for start in range(1, n + 1):
-            if graph.color[start] == 'white':
+            if graph.color[start] == WHITE:
                 graph.dfs(start)
-        print("YES")
+        return True
     except NotOptimised:
-        print("NO")
+        return None
 
 
 def input_data():
@@ -97,33 +101,8 @@ def input_data():
 
 
 if __name__ == '__main__':
-    solution(*input_data())
-
-"""
-3
-RB
-R
-
-4
-BBB
-RB
-B
-
-5
-RRRB
-BRR
-BR
-R
-
-10
-RRBRRBRRR
-BBBBBBRB
-BBRBRRR
-RRBRRR
-RBRRR
-BBRR
-RRR
-RR
-B
-
-"""
+    answer = solution(*input_data())
+    if answer:
+        print("YES")
+    else:
+        print("NO")
