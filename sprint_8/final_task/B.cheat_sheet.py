@@ -1,5 +1,5 @@
 """
-ID успешной посылки: 64844531
+ID успешной посылки: 64870467
 -------------------------------------------------------------------------------
 Задача:
 Написать программу, которая по длинной строке и набору допустимых слов опре-
@@ -28,35 +28,39 @@ K - количество элементов в префиксном дереве
 O(L+K+n)
 -------------------------------------------------------------------------------
 Данные посылки:
-208ms 6.50Mb
+208ms 5.93Mb
 """
 
-from typing import List, Tuple, Dict, NoReturn
-
-trie = [{}]
-terminals = [False]
+from typing import List, Tuple, NoReturn
 
 
-def add_string(trie: List[Dict[str, int]], terminals: List[bool], string: str) -> NoReturn:
-    current_node = trie[0]
-    current_node_index = 0
+class TrieNode:
 
-    for char in string:
-        if char not in current_node:
-            current_node[char] = len(trie)
-            trie.append({})
-            terminals.append(False)
+    def __init__(self):
+        self.terminals = [False]
+        self.trie = [{}]
 
-        next_node_index = current_node[char]
-        current_node = trie[next_node_index]
-        current_node_index = next_node_index
+    def add_word(self, word: str) -> NoReturn:
+        current_node = self.trie[0]
+        current_node_index = 0
 
-    terminals[current_node_index] = True
+        for char in word:
+            if char not in current_node:
+                current_node[char] = len(self.trie)
+                self.trie.append({})
+                self.terminals.append(False)
+
+            next_node_index = current_node[char]
+            current_node = self.trie[next_node_index]
+            current_node_index = next_node_index
+
+        self.terminals[current_node_index] = True
 
 
 def solution(input_string: str, words: List[str]) -> bool:
+    tr = TrieNode()
     for word in words:
-        add_string(trie, terminals, word)
+        tr.add_word(word)
 
     valid = [True] + [False] * len(input_string)
 
@@ -64,7 +68,7 @@ def solution(input_string: str, words: List[str]) -> bool:
         if not valid[pos]:
             continue
 
-        current_node = trie[0]
+        current_node = tr.trie[0]
         offset = 0
         mismatch_not_found = True
 
@@ -73,8 +77,8 @@ def solution(input_string: str, words: List[str]) -> bool:
 
             if symbol in current_node:
                 next_index = current_node[symbol]
-                current_node = trie[next_index]
-                if terminals[next_index]:
+                current_node = tr.trie[next_index]
+                if tr.terminals[next_index]:
                     valid[pos + offset + 1] = True
                 offset += 1
             else:
